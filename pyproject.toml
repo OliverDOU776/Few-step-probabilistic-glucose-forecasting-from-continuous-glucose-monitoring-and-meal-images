@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "glucoflow"
+version = "0.1.0"
+description = "Few-step multimodal probabilistic glucose forecasting with conditional rectified flow"
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+  "matplotlib>=3.8,<4",
+  "numpy>=1.26,<2",
+  "pandas>=2.2,<3",
+  "PyYAML>=6,<7",
+  "scikit-learn>=1.4,<2",
+  "scipy>=1.13,<2",
+  "torch>=2.3,<3",
+]
+
+[project.optional-dependencies]
+vision = [
+  "open-clip-torch>=2.24,<4",
+  "Pillow>=10,<12",
+]
+dev = [
+  "pytest>=8,<9",
+  "ruff>=0.11,<1",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E9", "F63", "F7", "F82"]

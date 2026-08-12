@@ -1,0 +1,3 @@
+model,protocol,auc_corr,iauc_corr,note
+XGBoost (meal -> AUC),Scientific Data reference; leave-one-subject-out,0.89,0.64,Copied metric-family reference from CGMacros Scientific Data paper
+Ours (p1_anchor_photo),Repo P1 direct task; 10-fold breakfast CV,0.9195066519671963,0.8281734989139808,Computed from predicted 3h PPGR point forecasts; not a leave-one-subject-out rerun

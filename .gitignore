@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+build/
+dist/
+
+# Environments and local configuration
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+.idea/
+.vscode/
+.DS_Store
+
+# Raw or derived health data: never commit these paths
+/data/
+/external/
+
+# Runtime outputs and experiment caches
+/artifacts/**
+!/artifacts/cache/
+!/artifacts/cache/clip_embeddings/
+!/artifacts/cache/clip_embeddings/cgmacros/
+!/artifacts/cache/clip_embeddings/cgmacros/.gitkeep
+!/artifacts/metrics/
+!/artifacts/metrics/.gitkeep
+/mlruns/
+/wandb/
+/tmp/
+
+# Model and numerical artifacts (the audited Stage-A checkpoint is explicit)
+*.pt
+*.pth
+*.ckpt
+*.pkl
+*.npy
+*.npz
+*.log
+!checkpoints/stage_a.pt
+
+# Archives and manuscript build products
+*.zip
+*.tar
+*.tar.gz
+*.7z
+*.pdf
+/paper/
+tectonic
