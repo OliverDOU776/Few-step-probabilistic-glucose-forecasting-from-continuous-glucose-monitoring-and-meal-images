@@ -1,3 +1,0 @@
-dataset,model,nfe,protocol,rmse,tg,hyper_sensitivity,hypo_sensitivity,config_name
-OhioT1DM,Sequential-T,,source paper,14.96,17.56,96.26,75.82,
-OhioT1DM,Ours,,official per-subject ws-training/ws-testing; last 20% of official training held out for validation,14.70289368483086,19.579245861434703,96.46987218502738,91.66666666666667,ohio_v3_h7.5_l3_bgap_wide
