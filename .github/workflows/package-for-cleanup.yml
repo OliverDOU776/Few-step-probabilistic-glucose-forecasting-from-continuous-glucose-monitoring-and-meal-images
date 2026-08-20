@@ -1,0 +1,22 @@
+name: Package repository for cleanup
+
+on:
+  push:
+    paths:
+      - .github/workflows/package-for-cleanup.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: zip -qr public-repo-source.zip . -x '.git/*' -x 'public-repo-source.zip'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: public-repo-source
+          path: public-repo-source.zip
+          retention-days: 7
