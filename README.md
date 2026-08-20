@@ -2,46 +2,42 @@
 
 # GlucoFlow
 
-### Reusable few-step probabilistic forecasting with cross-dataset pretraining and optional multimodal conditioning
+### Fast probabilistic forecasting that transfers from large source datasets to small target datasets
 
-[![Paper](https://img.shields.io/badge/associated%20paper-source-4C78A8.svg)](https://github.com/OliverDOU776/new-paper-fewstep)
+![Paper](https://img.shields.io/badge/paper-arXiv%20preprint%20coming%20soon-B31B1B.svg)
 ![Python](https://img.shields.io/badge/python-3.10%E2%80%933.12-3776AB.svg)
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.3%2B-EE4C2C.svg)
 ![Status](https://img.shields.io/badge/status-research%20software-2A9D8F.svg)
 
-Conditional rectified flow, transferable temporal pretraining, and optional image--nutrient conditioning.
+**Pretrain temporal dynamics once. Adapt with limited target data. Generate full predictive distributions in 1–4 steps.**
 
-<img src="assets/overview.png" width="100%" alt="Overview of GlucoFlow" />
+<img src="assets/overview.png" width="100%" alt="GlucoFlow architecture overview" />
 
 </div>
 
 > [!IMPORTANT]
-> GlucoFlow is research software, not a medical device. It must not be used for diagnosis, insulin dosing, treatment, alarms, or any other clinical decision.
+> GlucoFlow is research software, not a medical device. It must not be used for diagnosis, insulin dosing, treatment, alarms, or other clinical decisions.
 
-## Purpose of this repository
+## Why GlucoFlow?
 
-This repository provides the reusable implementation of GlucoFlow. It is organized for researchers and engineers who want to:
+Many forecasting projects have the same data problem: historical time series are plentiful, but the target cohort or target modality is small. GlucoFlow is designed for that setting.
 
-- initialize a forecasting model from a CGM-only temporal checkpoint;
-- pretrain on one or more time-series datasets before adapting to a smaller target dataset;
-- generate probabilistic future trajectories with 1, 2, or 4 Euler steps;
-- condition forecasts on optional side information such as meal photographs or nutrient vectors;
-- replace the supplied dataset adapters with an adapter for another dataset or application.
-
-Paper-specific result tables, sweep summaries, run-selection records, and manuscript figures are intentionally not stored here. The associated paper source and full experimental reporting are maintained separately in [new-paper-fewstep](https://github.com/OliverDOU776/new-paper-fewstep).
-
-## Core design
-
-| Component | Role |
+| What you need | What GlucoFlow provides |
 |---|---|
-| **Conditional rectified flow** | Generates a distribution of future trajectories with a small number of Euler steps. |
-| **Cross-dataset temporal pretraining** | Learns transferable dynamics from larger time-series cohorts before target-domain adaptation. |
-| **Optional conditioning** | Accepts a learned conditioning vector, including image, nutrient, metadata, or null representations. |
-| **Missing-modality fallback** | Supports combined, single-modality, or null conditioning paths. |
+| **Reliable uncertainty, not only a point estimate** | Samples complete future trajectories and returns medians, intervals, event probabilities, or any task-specific summary. |
+| **Fast probabilistic inference** | Uses a conditional rectified flow with only 1, 2, or 4 Euler steps instead of a long diffusion chain. |
+| **Better use of scarce target data** | Learns reusable temporal dynamics from larger source datasets before adapting to the smaller target dataset. |
+| **Optional side information** | Conditions on images, nutrients, metadata, learned embeddings, or a null token when side information is unavailable. |
+| **A practical transfer path** | Includes a released temporal checkpoint, reusable model modules, reference training scripts, and a custom dataset-adapter example. |
 
-The core model consumes normalized history tensors and optional conditioning embeddings. Dataset parsing, normalization, window extraction, and application-specific metrics are deliberately separated from the flow model so that they can be replaced for a new use case.
+GlucoFlow is especially useful when:
 
-## Installation
+- you have one or more large source time-series datasets and a smaller target dataset;
+- the target task needs calibrated ranges or sampled futures rather than a single prediction;
+- side information is informative but incomplete or expensive to collect;
+- iterative generative forecasting is too slow for the intended deployment path.
+
+## Install
 
 ```bash
 git clone https://github.com/OliverDOU776/Few-step-probabilistic-glucose-forecasting-from-continuous-glucose-monitoring-and-meal-images.git
@@ -60,19 +56,9 @@ python -m pip install -e ".[vision,dev]"
 pytest -q
 ```
 
-## Verify the released checkpoint
+## Quick start: sample future trajectories
 
-The repository includes the Stage-A CGM-only initialization checkpoint at `checkpoints/stage_a.pt`. Run the data-free smoke test:
-
-```bash
-python scripts/smoke_test.py
-```
-
-The test loads the checkpoint, samples trajectories with NFE=1, 2, and 4, and checks output shapes and finite values.
-
-## Minimal programmatic inference
-
-Inputs must be normalized with statistics fitted on the training split of the target application. The example below demonstrates the tensor interface; it does not perform clinical preprocessing.
+The repository includes a Stage-A temporal checkpoint at `checkpoints/stage_a.pt`. Inputs must be normalized using statistics fitted on the training split of your target application.
 
 ```python
 from pathlib import Path
@@ -90,7 +76,7 @@ state = torch.load(
 model.load_state_dict(state, strict=True)
 model.eval()
 
-# Two normalized histories, 24 time points each.
+# Example: two normalized histories with 24 time points each.
 history = torch.randn(2, 24)
 time_features = torch.zeros(2, 24, 4)
 
@@ -103,90 +89,134 @@ with torch.no_grad():
         meal_embed=None,
     )
 
-# [batch, sampled trajectories, forecast length]
-assert samples.shape == (2, 100, 24)
+# samples: [batch, sampled futures, forecast length]
 median = samples.median(dim=1).values
 lower = samples.quantile(0.05, dim=1)
 upper = samples.quantile(0.95, dim=1)
+
+print(samples.shape)  # torch.Size([2, 100, 24])
 ```
 
-For a multimodal application, pass a target-domain conditioning vector through `meal_embed`. The supplied `MealEncoder` shows the image--nutrient implementation used in the associated study, but the flow model only requires a tensor of the configured conditioning dimension.
+Run the data-free checkpoint verification:
 
-## Adapt GlucoFlow to a new dataset
+```bash
+python scripts/smoke_test.py
+```
 
-### 1. Implement the shared data contract
+## Add optional conditioning
 
-`glucoflow.data.adapters.base.DatasetOutput` defines the adapter output. At minimum, the CGM/time-series table contains:
+The flow model accepts an optional conditioning tensor through `meal_embed`. In the associated glucose study, that tensor represents meal photographs and nutrients, but it can represent any target-domain context with the configured embedding dimension.
+
+```python
+conditioning = torch.randn(2, 512)
+
+with torch.no_grad():
+    conditioned_samples = model.sample(
+        history,
+        nfe=2,
+        num_samples=100,
+        time_features=time_features,
+        meal_embed=conditioning,
+    )
+```
+
+The supplied `MealEncoder` demonstrates one image–nutrient implementation. A new application can replace it with an encoder for text, categorical metadata, sensor context, interventions, or another modality.
+
+## Bring your own dataset
+
+### 1. Implement the shared adapter contract
+
+`glucoflow.data.adapters.base.DatasetOutput` defines the data interface. For the supplied glucose-oriented schema, the minimum time-series table is:
 
 ```text
 subject_id | timestamp | glucose_mgdl
 ```
 
-The names reflect the original application; for another domain, map the target series into `glucose_mgdl` or fork the schema with a domain-specific name. Optional meal/conditioning and subject tables may be returned alongside the time series.
-
-A complete CSV example is provided in [`examples/custom_adapter.py`](examples/custom_adapter.py):
+A ready-to-run CSV template is provided in [`examples/custom_adapter.py`](examples/custom_adapter.py).
 
 ```bash
 python examples/custom_adapter.py /path/to/my_dataset
 ```
 
-The example expects `/path/to/my_dataset/cgm.csv`, validates the required columns, parses timestamps, sorts each subject chronologically, and estimates the sampling interval.
+The example expects:
 
-### 2. Choose a training path
+```text
+my_dataset/
+├── cgm.csv          # required
+├── meals.csv        # optional conditioning events
+└── subjects.csv     # optional subject metadata
+```
 
-- Use `scripts/pretrain.py` as a reference for multi-dataset Stage-A pretraining.
-- Use `scripts/finetune_cgmacros.py` as a reference for target-domain adaptation with optional conditioning and modality dropout.
-- Use the reusable modules in `src/glucoflow/` directly when building a cleaner application-specific trainer.
+For a non-glucose application, map the target signal into the supplied schema for a quick prototype, or fork the schema with domain-appropriate names.
 
-The scripts retain the original glucose-study defaults, so a new application should explicitly replace dataset adapters, clipping rules, normalization, history/forecast lengths, and evaluation metrics.
+### 2. Set the forecasting task
 
-### 3. Keep validation and test roles separate
+Choose the history length, forecast length, sampling interval, normalization strategy, and evaluation metrics for the target application. Do not inherit the glucose-study defaults without checking whether they fit the new problem.
 
-Fit normalization, select checkpoints, choose uncertainty scales, and tune operating parameters on training/validation data only. Evaluate the held-out test split once after the configuration is fixed.
+### 3. Pretrain or start from the released checkpoint
+
+Use `scripts/pretrain.py` as a reference for multi-dataset temporal pretraining. The released checkpoint is a useful initialization when the target signal is sufficiently related to the original physiological time series; otherwise, pretrain the same architecture on your own source datasets.
+
+### 4. Adapt to the target dataset
+
+Use `scripts/finetune_cgmacros.py` as a reference for target-domain adaptation with optional conditioning and modality dropout. The reusable modules in `src/glucoflow/` can also be called directly from a cleaner application-specific trainer.
+
+### 5. Keep model selection honest
+
+Fit normalization, choose checkpoints, tune uncertainty scales, and select operating parameters using training and validation data only. Evaluate the held-out test split after the configuration is fixed.
+
+## Main entry points
+
+| Path | Purpose |
+|---|---|
+| `src/glucoflow/models/` | Rectified-flow backbone, Euler sampling, and conditioning modules. |
+| `src/glucoflow/data/` | Shared schema, adapters, normalization, and dataset utilities. |
+| `src/glucoflow/evaluation/` | Reusable splits, windows, and probabilistic metrics. |
+| `scripts/pretrain.py` | Reference multi-dataset temporal pretraining. |
+| `scripts/finetune_cgmacros.py` | Reference target adaptation with optional multimodal conditioning. |
+| `scripts/prepare_data.py` | Reference preprocessing and feature caching. |
+| `examples/custom_adapter.py` | Minimal template for connecting a new dataset. |
+| `scripts/smoke_test.py` | Data-free checkpoint and NFE=1/2/4 inference test. |
+| `scripts/validate_release.py` | Source-tree and release-integrity checks. |
 
 ## Repository layout
 
 ```text
 .
 ├── src/glucoflow/
-│   ├── models/              # Rectified-flow backbone, sampling, meal encoder
+│   ├── models/              # Conditional rectified flow and conditioning
 │   ├── data/                # Shared schema, normalization, adapters
-│   └── evaluation/          # Splits, windows, and reusable metrics
-├── scripts/
-│   ├── prepare_data.py      # Reference data preparation and feature caching
-│   ├── pretrain.py          # Reference Stage-A training entry point
-│   ├── finetune_cgmacros.py # Reference Stage-B multimodal adaptation
-│   ├── smoke_test.py        # Data-free checkpoint test
-│   └── validate_release.py  # Release-integrity checks
-├── examples/
-│   └── custom_adapter.py    # Template for a new dataset
+│   └── evaluation/          # Splits, windows, probabilistic metrics
+├── scripts/                 # Preparation, pretraining, adaptation, validation
+├── examples/                # Bring-your-own-data templates
 ├── checkpoints/stage_a.pt   # Released temporal initialization
 ├── tests/                   # Data-free unit and integrity tests
 └── assets/overview.png      # Architecture overview
 ```
 
-Raw health data, meal photographs, derived embeddings, run logs, experiment sweeps, and paper result snapshots are not distributed.
+## Associated research
 
-## Datasets used in the associated study
+**Paper:** arXiv preprint coming soon.
 
-The associated paper uses:
+The associated study applies GlucoFlow to multimodal glucose forecasting using CGMacros, cross-dataset CGM pretraining, five GlucoBench evaluation cohorts, OhioT1DM, and the official controlled-access DiaTrend cohort. The software architecture is designed to be reused beyond that study by replacing the data adapter, target-specific conditioning, and evaluation layer.
 
-- CGMacros for multimodal adaptation and participant-disjoint evaluation;
-- Weinstock, BIG IDEAs, and HUPA-UCM for CGM-only pretraining;
-- Broll, Colas, Dubosson, Hall, and held-out Weinstock participants for cross-cohort forecasting evaluation;
-- OhioT1DM and the **official controlled-access DiaTrend cohort** for retrospective event-prediction evaluation.
+## Checkpoint and responsible use
 
-This repository does not redistribute any of those datasets. Official DiaTrend is accessed through Synapse under its own approval and use conditions; the controlled files and paper-specific ingestion pipeline are not included in the public release. Users adapting GlucoFlow to DiaTrend or another controlled dataset should implement a local adapter without committing source records.
-
-## Checkpoint and limitations
-
-`checkpoints/stage_a.pt` contains the CGM-only Stage-A state dictionary.
+`checkpoints/stage_a.pt` is a CGM-only temporal initialization, not a calibrated model for a new population or application.
 
 ```text
 SHA-256  759dabb7a5b20f9377a8d9ddaa2ae333d8e7166bc07c8d17a04f14d58acdd5a7
 ```
 
-The checkpoint is an initialization, not a calibrated model for a new population. Target-specific normalization, adaptation, validation, and safety assessment remain necessary. See [MODEL_CARD.md](MODEL_CARD.md) for intended and out-of-scope uses.
+Before using it on a new dataset:
+
+- fit target-specific normalization;
+- evaluate distribution shift and missingness;
+- adapt and calibrate using target-domain data;
+- test uncertainty quality, not only point error;
+- conduct application-specific safety and privacy review.
+
+See [MODEL_CARD.md](MODEL_CARD.md) for intended use, limitations, and out-of-scope applications.
 
 ## Citation
 
@@ -196,11 +226,11 @@ The checkpoint is an initialization, not a calibrated model for a new population
             Probabilistic Glucose Forecasting},
   author = {Wang, Zijia and Toumazou, Christofer},
   year   = {2026},
-  note   = {Research software and associated manuscript},
+  note   = {Research software; arXiv preprint forthcoming},
   url    = {https://github.com/OliverDOU776/Few-step-probabilistic-glucose-forecasting-from-continuous-glucose-monitoring-and-meal-images}
 }
 ```
 
 ## Third-party components and data terms
 
-The optional image path uses OpenCLIP and public LAION ViT-B/32 weights. Dataset licenses and controlled-access agreements do not transfer to this repository. See [THIRD_PARTY.md](THIRD_PARTY.md) before redistributing derived artifacts.
+The optional image path uses OpenCLIP and public LAION ViT-B/32 weights. Dataset licenses and controlled-access agreements do not transfer to this repository. See [THIRD_PARTY.md](THIRD_PARTY.md) before redistributing derived models, embeddings, or data artifacts.
