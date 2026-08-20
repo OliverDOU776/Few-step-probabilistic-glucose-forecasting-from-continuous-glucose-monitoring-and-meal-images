@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use GlucoFlow, please cite this software and the associated manuscript."
+message: "If you use GlucoFlow, please cite this software. The associated arXiv preprint is forthcoming."
 type: software
 title: "GlucoFlow: Cross-Dataset Pretraining for Few-Step Probabilistic Glucose Forecasting"
 authors:
@@ -12,5 +12,5 @@ authors:
 version: 0.2.0
 date-released: 2026-08-20
 repository-code: "https://github.com/OliverDOU776/Few-step-probabilistic-glucose-forecasting-from-continuous-glucose-monitoring-and-meal-images"
-url: "https://github.com/OliverDOU776/new-paper-fewstep"
+url: "https://github.com/OliverDOU776/Few-step-probabilistic-glucose-forecasting-from-continuous-glucose-monitoring-and-meal-images"
 license: "NOASSERTION"
