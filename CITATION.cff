@@ -1,10 +1,16 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite the manuscript below. Author metadata will be updated after review."
+message: "If you use GlucoFlow, please cite this software and the associated manuscript."
 type: software
-title: "GlucoFlow: Few-Step Multimodal Glucose Forecasting"
+title: "GlucoFlow: Cross-Dataset Pretraining for Few-Step Probabilistic Glucose Forecasting"
 authors:
-  - name: "GlucoFlow Authors"
-version: 0.1.0
-date-released: 2026-08-12
+  - family-names: "Wang"
+    given-names: "Zijia"
+    orcid: "https://orcid.org/0000-0001-6978-9458"
+  - family-names: "Toumazou"
+    given-names: "Christofer"
+    orcid: "https://orcid.org/0000-0001-8773-7360"
+version: 0.2.0
+date-released: 2026-08-20
 repository-code: "https://github.com/OliverDOU776/Few-step-probabilistic-glucose-forecasting-from-continuous-glucose-monitoring-and-meal-images"
-url: "https://github.com/OliverDOU776/paper-Few-Step"
+url: "https://github.com/OliverDOU776/new-paper-fewstep"
+license: "NOASSERTION"

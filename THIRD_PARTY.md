@@ -1,19 +1,31 @@
-# Third-party software, models, data, and figures
+# Third-party software, models, and data
 
-No third-party dataset or raw meal photograph is distributed as a standalone file in this repository. Users are responsible for obtaining data and complying with the source terms in `docs/DATA.md`.
+No raw health dataset, meal photograph collection, downloaded model weight, or controlled-access record is distributed in this repository. Users are responsible for obtaining all external resources from their owners and complying with the applicable licenses, data-use agreements, and access conditions.
 
-## OpenCLIP
+## OpenCLIP and LAION weights
 
-The optional image pipeline uses [mlfoundations/open_clip](https://github.com/mlfoundations/open_clip) and the public [LAION ViT-B/32 model](https://huggingface.co/laion/CLIP-ViT-B-32-laion2B-s34B-b79K). Consult the software repository and model card for their licenses and training-data limitations. Downloaded weights and derived embeddings are excluded from Git.
+The optional image-conditioning path uses [mlfoundations/open_clip](https://github.com/mlfoundations/open_clip) and the public [LAION ViT-B/32 model](https://huggingface.co/laion/CLIP-ViT-B-32-laion2B-s34B-b79K). Their software, model, and training-data terms remain separate from this repository. Downloaded weights and derived image embeddings must not be committed here.
 
-## GlucoBench
+## Datasets in the associated study
 
-The benchmark formatter is loaded from a user-provided checkout of [IrinaStatsLab/GlucoBench](https://github.com/IrinaStatsLab/GlucoBench), pinned in the documentation to commit `661d840a98b316df51faa13a7100430afcbbb5b7`. It is not vendored here. Each underlying dataset retains its own terms.
+The associated paper uses data obtained separately from their official sources:
 
-## README figures and CGMacros material
+- [CGMacros 1.0.0](https://physionet.org/content/cgmacros/1.0.0/) for multimodal adaptation and evaluation;
+- [GlucoBench](https://github.com/IrinaStatsLab/GlucoBench) and its underlying cohorts for cross-cohort forecasting;
+- [BIG IDEAs Lab](https://physionet.org/content/big-ideas-glycemic-wearable/1.1.3/) and [HUPA-UCM](https://data.mendeley.com/datasets/3hbcscwz44/1) for temporal pretraining;
+- [OhioT1DM](https://webpages.charlotte.edu/rbunescu/ohiot1dm.html) for controlled clinical-event evaluation;
+- the **official controlled-access DiaTrend cohort** distributed through [Synapse](https://www.synapse.org/Synapse:syn38187184) for retrospective event-prediction evaluation.
 
-The README figures are copied from the associated [paper source repository](https://github.com/OliverDOU776/paper-Few-Step). The overview figure contains meal-image material derived from [CGMacros](https://physionet.org/content/cgmacros/1.0.0/), released under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/). Source dataset citation: Thomaz et al., *CGMacros: a scientific dataset for personalized nutrition and diet monitoring*, DOI [10.13026/3z8q-x658](https://doi.org/10.13026/3z8q-x658).
+Each underlying dataset retains its own terms. In particular, OhioT1DM and DiaTrend require controlled access and must not be redistributed from this code repository. The associated study used official DiaTrend data; no DiaTrend records or derived subject-level artifacts are included here.
 
-## Dataset terms
+## GlucoBench formatter
 
-Dataset licenses and access agreements do not transfer to this code repository. In particular, OhioT1DM and official DiaTrend are controlled-access and may not be redistributed here.
+The reference pretraining code can load a user-provided checkout of [IrinaStatsLab/GlucoBench](https://github.com/IrinaStatsLab/GlucoBench). It is not vendored in this repository, and the licenses of the underlying datasets must be checked individually.
+
+## README architecture figure
+
+`assets/overview.png` is retained only to explain the software architecture. It is derived from the associated paper source. Any meal-image material in that figure originates from CGMacros and remains subject to the dataset's attribution and non-commercial share-alike terms.
+
+## License separation
+
+Dataset licenses, model licenses, and controlled-access approvals do not transfer to the GlucoFlow source code. Before releasing a derived model or cached embedding, verify the terms of every source dataset and pretrained model used to create it.

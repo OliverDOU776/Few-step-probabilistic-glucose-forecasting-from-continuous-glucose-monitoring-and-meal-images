@@ -1,4 +1,4 @@
-# Model card: Stage-A GlucoFlow checkpoint
+# Model card: GlucoFlow Stage-A initialization
 
 ## Artifact
 
@@ -9,31 +9,53 @@
 
 ## Model
 
-The checkpoint initializes the default `FlowMatchingModel`: a conditional rectified-flow forecaster with a transformer backbone, 120 minutes of 5-minute CGM history (24 steps), a 120-minute output (24 steps), and 1/2/4-step Euler sampling. Stage A uses the learned null meal token; it is not itself a photo-conditioned model.
+The checkpoint initializes the default `FlowMatchingModel`, a conditional rectified-flow forecaster with:
 
-## Training data
+- a transformer temporal backbone;
+- 24 historical time points and 24 forecast time points under the released defaults;
+- optional time features and conditioning embeddings;
+- Euler sampling with NFE=1, 2, or 4.
 
-The manuscript describes Stage-A training on subject-disjoint training portions of:
+Stage A uses the learned null conditioning token. The checkpoint is therefore a temporal initialization rather than a final photo-conditioned or target-calibrated model.
+
+## Training sources
+
+The associated study describes Stage-A training on the training portions of:
 
 - Weinstock through the GlucoBench preprocessing path;
 - BIG IDEAs Lab;
 - HUPA-UCM.
 
-The manuscript snapshot reports 241 training subjects and approximately 795,000 CGM readings. No raw records are embedded intentionally, but model weights can still retain statistical information about their training distribution.
+The paper reports 241 participants and approximately 795,000 CGM readings across those sources. Raw records are not embedded intentionally, but learned weights may still retain statistical information about their training distributions.
 
 ## Intended use
 
-- Initialization for the research training and evaluation scripts in this repository.
-- Reproduction studies of few-step probabilistic time-series forecasting.
-- Non-clinical methodological research.
+- Initialization for non-clinical time-series forecasting research.
+- Cross-dataset pretraining followed by target-domain adaptation.
+- Method-development studies of few-step probabilistic generation.
+- Transfer to a new dataset after replacing the adapter, normalization, windowing, and evaluation logic.
+
+## Required adaptation steps
+
+Before use on a new target dataset:
+
+1. define a participant- or entity-disjoint evaluation protocol where appropriate;
+2. fit normalization using training data only;
+3. adapt or fine-tune the model on the target domain;
+4. select checkpoints and uncertainty parameters using validation data only;
+5. evaluate once on a held-out test split;
+6. establish application-specific safety and reliability requirements.
+
+The checkpoint should not be treated as a calibrated predictor before those steps.
 
 ## Out-of-scope use
 
 - Diagnosis, treatment, insulin dosing, alarms, or patient-facing decisions.
-- Use as a calibrated predictor without dataset-specific normalization and evaluation.
+- Direct deployment without target-domain validation.
 - Claims of demographic generalization, fairness, safety, or regulatory validation.
-- Direct use as the final multimodal model; Stage-B adaptation is required for meal conditioning.
+- Use as a final multimodal model without Stage-B adaptation.
+- Interpreting sampling speed as evidence of clinical reliability.
 
 ## Limitations
 
-The source cohorts are limited in size and population coverage. Dataset shifts, sensor differences, missingness, meal timing, medications, insulin, and unobserved clinical variables can invalidate forecasts. Sampling speed does not imply clinical reliability. The checkpoint has not been audited for privacy leakage or membership inference.
+The source cohorts are limited in population and sensor coverage. Dataset shift, missingness, meal timing, medications, insulin, activity, illness, and unobserved variables can invalidate forecasts. The released checkpoint has not been audited for privacy leakage, membership inference, adversarial robustness, or regulated-device use.

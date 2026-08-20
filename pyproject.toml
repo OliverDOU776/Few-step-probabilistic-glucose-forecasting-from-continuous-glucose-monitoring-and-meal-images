@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "glucoflow"
-version = "0.1.0"
-description = "Few-step multimodal probabilistic glucose forecasting with conditional rectified flow"
+version = "0.2.0"
+description = "Few-step probabilistic time-series forecasting with cross-dataset pretraining and optional multimodal conditioning"
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
 dependencies = [

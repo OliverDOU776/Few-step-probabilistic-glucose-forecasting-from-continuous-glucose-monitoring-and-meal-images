@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-closed checks for the curated public release tree."""
+"""Fail-closed checks for the reusable public release tree."""
 
 from __future__ import annotations
 
@@ -19,9 +19,13 @@ REQUIRED = {
     "README.md",
     "THIRD_PARTY.md",
     "checkpoints/stage_a.pt",
-    "docs/DATA.md",
-    "docs/REPRODUCING.md",
+    "examples/custom_adapter.py",
     "pyproject.toml",
+    "scripts/finetune_cgmacros.py",
+    "scripts/prepare_data.py",
+    "scripts/pretrain.py",
+    "scripts/smoke_test.py",
+    "scripts/validate_release.py",
 }
 BANNED_PREFIXES = (
     ".agents/",
@@ -29,9 +33,11 @@ BANNED_PREFIXES = (
     ".codex/",
     ".venv/",
     "data/",
+    "docs/",
     "external/",
     "memory-bank/",
     "paper/",
+    "results/",
 )
 BANNED_SUFFIXES = (".log", ".npy", ".npz", ".pkl", ".pyc", ".zip")
 MAX_FILE_BYTES = 10 * 1024 * 1024
@@ -104,7 +110,7 @@ def main() -> None:
 
     if failures:
         raise SystemExit("Release validation failed:\n- " + "\n- ".join(failures))
-    print(f"OK: {len(files)} files passed release-integrity checks")
+    print(f"OK: {len(files)} files passed reusable-release integrity checks")
 
 
 if __name__ == "__main__":
